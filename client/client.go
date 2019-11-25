@@ -12,7 +12,7 @@ import (
 
 type HelloClient struct{}
 
-func Client() {
+func Start() {
 	log.Print("client")
 	//sampleなのでwithInsecure
 	conn, err := grpc.Dial("127.0.0.1:19003", grpc.WithInsecure())

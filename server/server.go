@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"context"
@@ -20,8 +20,7 @@ func (hs *HelloServer) GetHelloWorld(ctx context.Context, req *pb.HelloRequest) 
 	}, nil
 }
 
-func main() {
-	log.Print("created grpc server")
+func GRPCStart() {
 	listenPort, err := net.Listen("tcp", ":19003")
 	if err != nil {
 		log.Fatalln(err)
@@ -31,5 +30,10 @@ func main() {
 	// 実行したい実処理をseverに登録する
 	pb.RegisterHelloServer(server, helloS)
 	server.Serve(listenPort)
+
+}
+
+func main() {
+	GRPCStart()
 	return
 }
