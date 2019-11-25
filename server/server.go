@@ -1,4 +1,4 @@
-package server
+package main
 
 import (
 	"context"
@@ -20,9 +20,8 @@ func (hs *HelloServer) GetHelloWorld(ctx context.Context, req *pb.HelloRequest) 
 	}, nil
 }
 
-// Server server func
-func Server() {
-	log.Print("server")
+func main() {
+	log.Print("created grpc server")
 	listenPort, err := net.Listen("tcp", ":19003")
 	if err != nil {
 		log.Fatalln(err)
