@@ -14,7 +14,7 @@ type HelloServer struct{}
 
 // GetHelloWorld get hello world message
 func (hs *HelloServer) GetHelloWorld(ctx context.Context, req *pb.HelloRequest) (*pb.HelloResponse, error) {
-	message := req.User + ", hello!"
+	message := "hello, " + req.User
 	return &pb.HelloResponse{
 		Message: message,
 	}, nil
@@ -25,15 +25,14 @@ func GRPCStart() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	server := grpc.NewServer()
+	s := grpc.NewServer()
 	helloS := &HelloServer{}
 	// 実行したい実処理をseverに登録する
-	pb.RegisterHelloServer(server, helloS)
-	server.Serve(listenPort)
-
-}
-
-func main() {
-	GRPCStart()
-	return
+	pb.RegisterHelloServer(s, helloS)
+	go func() {
+		if err := s.Serve(listenPort); err != nil {
+			log.Fatalf("failed to serve: %v", err)
+		}
+	}()
+	log.Printf("listen to grpc port %d", 19003)
 }
