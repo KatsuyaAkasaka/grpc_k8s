@@ -1,0 +1,80 @@
+version: 2
+jobs: # 1回の実行の基本作業単位
+  build_client:
+    working_directory: ~/k8s_grpc/client
+    docker:
+      - image: circleci/golang:1.12-stretch
+        environment: # プライマリコンテナの環境変数
+            GO111MODULE: "on"
+    steps:
+        - checkout
+        - run: go mod tidy
+  build_server:
+    working_directory: ~/k8s_grpc/server
+    docker:
+      - image: circleci/golang:1.12-stretch
+        environment: # プライマリコンテナの環境変数
+            GO111MODULE: "on"
+    steps:
+        - checkout
+        - run: go mod tidy
+  build_pb:
+    working_directory: ~/k8s_grpc/pb
+    docker:
+      - image: circleci/golang:1.12-stretch
+        environment: # プライマリコンテナの環境変数
+            GO111MODULE: "on"
+    steps:
+        - checkout
+        - run: go mod tidy
+  push_image_client:
+    working_directory: ~/k8s_grpc/client
+    docker:
+      - image: google/cloud-sdk
+    environment:
+        GCP_PROJECT: ${GCP_PROJECT}
+        IMAGE_NAME: ${CIRCLE_SHA1}
+        DOCKER_IMAGE_TAG: ${CIRCLE_SHA1}
+    steps:
+        - checkout
+        - run:
+            name: Authenticate gcloud to push the image
+            command: |
+              echo $GCP_SA > gcloud-service-key.json
+              gcloud auth activate-service-account --key-file gcloud-service-key.json
+              gcloud auth configure-docker --quiet
+        - run:
+            name: Docker Build
+            command: docker build -t client .
+        - run:
+            name: Tagging Docker Image
+            command: docker tag client asia.gcr.io/noticonn-test/k8s-grpc/client:${DOCKER_IMAGE_TAG}
+        - run:
+            name: Push Docker Image
+            command: docker push asia.gcr.io/noticonn-test/k8s-grpc/client:${DOCKER_IMAGE_TAG}
+
+
+workflows:
+  version: 2
+  build_and_deploy:
+    jobs:
+      - build_client:
+          filters:
+            tags:
+              only: /^.*/
+      - build_server:
+          filters:
+            tags:
+              only: /^.*/
+      - build_pb:
+          filters:
+            tags:
+              only: /^.*/
+      - push_image_client:
+          requires:
+            - build_client
+            - build_server
+            - build_pb
+          filters:
+            tags:
+              only: /^.*/
