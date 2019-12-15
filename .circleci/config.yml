@@ -1,80 +1,111 @@
 version: 2
-jobs: # 1回の実行の基本作業単位
-  build_client:
+references:
+  build_client: &build_client
     working_directory: ~/k8s_grpc/client
-    docker:
-      - image: circleci/golang:1.12-stretch
-        environment: # プライマリコンテナの環境変数
-            GO111MODULE: "on"
-    steps:
-        - checkout
-        - run: go mod tidy
-  build_server:
+    command: go mod tidy
+  build_server: &build_server
     working_directory: ~/k8s_grpc/server
-    docker:
-      - image: circleci/golang:1.12-stretch
-        environment: # プライマリコンテナの環境変数
-            GO111MODULE: "on"
-    steps:
-        - checkout
-        - run: go mod tidy
-  build_pb:
+    command: go mod tidy
+  build_pb: &build_pb
     working_directory: ~/k8s_grpc/pb
-    docker:
-      - image: circleci/golang:1.12-stretch
-        environment: # プライマリコンテナの環境変数
-            GO111MODULE: "on"
-    steps:
-        - checkout
-        - run: go mod tidy
-  push_image_client:
+    command: go mod tidy
+  setup_env: &setup_env
+    name: Set Environment Variable
+    command: |
+      echo 'export GCP_PROJECT=${GCP_PROJECT}' >> $BASH_ENV
+      echo 'export GO111MODUELE="on"' >> $BASH_ENV
+      echo 'export IMAGE_NAME=${CIRCLE_BRANCH}' >> $BASH_ENV
+      if [ $CIRCLE_BRANCH == 'develop' ]; then
+        echo 'export DOCKER_IMAGE_TAG=latest' >> $BASH_ENV
+      else
+        echo 'export DOCKER_IMAGE_TAG=$(echo $CIRCLE_BRANCH | sed -e "s/[^a-z0-9]/-/g")' >> $BASH_ENV
+      fi
+      source $BASH_ENV
+  install_dc: &install_dc
+    name: Install docker-compose
+    command: |
+      curl -L https://github.com/docker/compose/releases/download/1.24.1/docker-compose-`uname -s`-`uname -m` > ~/docker-compose
+      chmod +x ~/docker-compose
+      mv ~/docker-compose /usr/local/bin/docker-compose
+  auth_gcloud: &auth_gcloud
+    working_directory: ~/k8s_grpc
+    name: Authenticate gcloud
+    command: |
+      echo $GCP_SA > gcloud-service-key.json
+      gcloud auth activate-service-account --key-file gcloud-service-key.json
+      gcloud auth configure-docker --quiet
+  build: &build
+    name: docker-compose build
+    command: docker-compose build
+  push_image_client: &push_image_client
     working_directory: ~/k8s_grpc/client
+    name: push_image
+    command: |
+      docker tag client asia.gcr.io/noticonn-test/k8s-grpc/client:${DOCKER_IMAGE_TAG}
+      docker push asia.gcr.io/noticonn-test/k8s-grpc/client:${DOCKER_IMAGE_TAG}
+  push_image_server: &push_image_server
+    working_directory: ~/k8s_grpc/server
+    name: push_image
+    command: |
+      docker tag server asia.gcr.io/noticonn-test/k8s-grpc/server:${DOCKER_IMAGE_TAG}
+      docker push asia.gcr.io/noticonn-test/k8s-grpc/server:${DOCKER_IMAGE_TAG}
+  push_image_pb: &push_image_pb
+    working_directory: ~/k8s_grpc/pb
+    name: push_image
+    command: |
+      docker build -t pb .
+      docker tag pb asia.gcr.io/noticonn-test/k8s-grpc/pb:${DOCKER_IMAGE_TAG}
+      docker push asia.gcr.io/noticonn-test/k8s-grpc/pb:${DOCKER_IMAGE_TAG}
+
+jobs:
+  push_image_client:
+    working_directory: ~/k8s_grpc
     docker:
       - image: google/cloud-sdk
-    environment:
-        GCP_PROJECT: ${GCP_PROJECT}
-        IMAGE_NAME: ${CIRCLE_SHA1}
-        DOCKER_IMAGE_TAG: ${CIRCLE_SHA1}
     steps:
-        - checkout
-        - run:
-            name: Authenticate gcloud to push the image
-            command: |
-              echo $GCP_SA > gcloud-service-key.json
-              gcloud auth activate-service-account --key-file gcloud-service-key.json
-              gcloud auth configure-docker --quiet
-        - run:
-            name: Docker Build
-            command: docker build -t client .
-        - run:
-            name: Tagging Docker Image
-            command: docker tag client asia.gcr.io/noticonn-test/k8s-grpc/client:${DOCKER_IMAGE_TAG}
-        - run:
-            name: Push Docker Image
-            command: docker push asia.gcr.io/noticonn-test/k8s-grpc/client:${DOCKER_IMAGE_TAG}
-
+      - checkout
+      - setup_remote_docker
+      - run: *setup_env
+      - run: *install_dc
+      - run: *auth_gcloud
+      - run: *build
+      - run: *push_image_client
+  push_image_server:
+    working_directory: ~/k8s_grpc
+    docker:
+      - image: google/cloud-sdk
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run: *setup_env
+      - run: *install_dc
+      - run: *auth_gcloud
+      - run: *build
+      - run: *push_image_server
+  # push_image_pb:
+  #   working_directory: ~/k8s_grpc
+  #   docker:
+  #     - image: google/cloud-sdk
+  #   steps:
+  #     - checkout
+  #     - setup_remote_docker
+  #     - run: *setup_env
+  #     - run: *auth_gcloud
+  #     - run: *push_image_pb
 
 workflows:
   version: 2
   build_and_deploy:
     jobs:
-      - build_client:
-          filters:
-            tags:
-              only: /^.*/
-      - build_server:
-          filters:
-            tags:
-              only: /^.*/
-      - build_pb:
-          filters:
-            tags:
-              only: /^.*/
       - push_image_client:
-          requires:
-            - build_client
-            - build_server
-            - build_pb
           filters:
             tags:
               only: /^.*/
+      - push_image_server:
+          filters:
+            tags:
+              only: /^.*/
+      # - push_image_pb:
+      #     filters:
+      #       tags:
+      #         only: /^.*/

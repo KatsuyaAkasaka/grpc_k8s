@@ -1,7 +1,10 @@
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
+github.com/KatsuyaAkasaka/grpc_k8s/client v0.0.0-20191215112244-39e810e18069 h1:pxHJJsEg8gV9TK1S2zBI5pypSYrwN1Dkb9ukSKiEcfg=
+github.com/KatsuyaAkasaka/grpc_k8s/client v0.0.0-20191215142518-09a9dad93112 h1:9WSaxZ6DNRo8N6tH0axOIuPkskNE6in0jMa7AZTunjs=
 github.com/KatsuyaAkasaka/grpc_k8s/pb v0.0.0-20191208083714-da8b707394ed h1:V2WI9++jwCmn9ALQ42U6Zf/eUQK9X+NAS7DTHas1ekQ=
 github.com/KatsuyaAkasaka/grpc_k8s/pb v0.0.0-20191208083714-da8b707394ed/go.mod h1:K4JFhYKVQvE4pc+mtORCpJjPra6O1F1Xgig0rdNBKFg=
+github.com/KatsuyaAkasaka/grpc_k8s/server v0.0.0-20191215142518-09a9dad93112 h1:rM6zOzjxeZBMcT5TUMA9VDoXql8EaJqWjFs51djNvhI=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
