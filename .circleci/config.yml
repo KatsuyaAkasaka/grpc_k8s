@@ -1,14 +1,5 @@
 version: 2
 references:
-  build_client: &build_client
-    working_directory: ~/k8s_grpc/client
-    command: go mod tidy
-  build_server: &build_server
-    working_directory: ~/k8s_grpc/server
-    command: go mod tidy
-  build_pb: &build_pb
-    working_directory: ~/k8s_grpc/pb
-    command: go mod tidy
   setup_env: &setup_env
     name: Set Environment Variable
     command: |
@@ -34,28 +25,34 @@ references:
       echo $GCP_SA > gcloud-service-key.json
       gcloud auth activate-service-account --key-file gcloud-service-key.json
       gcloud auth configure-docker --quiet
-  build: &build
+  build_client: &build_client
     name: docker-compose build
-    command: docker-compose build
+    command: docker-compose build client
+  build_server: &build_server
+    name: docker-compose build
+    command: docker-compose build server
   push_image_client: &push_image_client
     working_directory: ~/k8s_grpc/client
     name: push_image
     command: |
       docker tag client asia.gcr.io/noticonn-test/k8s-grpc/client:${DOCKER_IMAGE_TAG}
+      docker tag client asia.gcr.io/noticonn-test/k8s-grpc/client:${CIRCLE_SHA1}
       docker push asia.gcr.io/noticonn-test/k8s-grpc/client:${DOCKER_IMAGE_TAG}
+      docker push asia.gcr.io/noticonn-test/k8s-grpc/client:${CIRCLE_SHA1}
   push_image_server: &push_image_server
     working_directory: ~/k8s_grpc/server
     name: push_image
     command: |
       docker tag server asia.gcr.io/noticonn-test/k8s-grpc/server:${DOCKER_IMAGE_TAG}
+      docker tag server asia.gcr.io/noticonn-test/k8s-grpc/server:${CIRCLE_SHA1}
       docker push asia.gcr.io/noticonn-test/k8s-grpc/server:${DOCKER_IMAGE_TAG}
-  push_image_pb: &push_image_pb
-    working_directory: ~/k8s_grpc/pb
-    name: push_image
+      docker push asia.gcr.io/noticonn-test/k8s-grpc/server:${CIRCLE_CHA1}
+  apply_server: &apply_server
+    working_directory: ~/k8s_grpc/server
+    name: k8s releasse
     command: |
-      docker build -t pb .
-      docker tag pb asia.gcr.io/noticonn-test/k8s-grpc/pb:${DOCKER_IMAGE_TAG}
-      docker push asia.gcr.io/noticonn-test/k8s-grpc/pb:${DOCKER_IMAGE_TAG}
+      ./k8s/overlays/production/build.sh "server:${CIRCLE_SHA1}"
+      kubectl apply -f ./k8s/manifest/prd-k8s.yaml
 
 jobs:
   push_image_client:
@@ -68,7 +65,7 @@ jobs:
       - run: *setup_env
       - run: *install_dc
       - run: *auth_gcloud
-      - run: *build
+      - run: *build_client
       - run: *push_image_client
   push_image_server:
     working_directory: ~/k8s_grpc
@@ -80,19 +77,9 @@ jobs:
       - run: *setup_env
       - run: *install_dc
       - run: *auth_gcloud
-      - run: *build
+      - run: *build_server
       - run: *push_image_server
-  # push_image_pb:
-  #   working_directory: ~/k8s_grpc
-  #   docker:
-  #     - image: google/cloud-sdk
-  #   steps:
-  #     - checkout
-  #     - setup_remote_docker
-  #     - run: *setup_env
-  #     - run: *auth_gcloud
-  #     - run: *push_image_pb
-
+      - run: *apply_server
 workflows:
   version: 2
   build_and_deploy:
@@ -105,7 +92,3 @@ workflows:
           filters:
             tags:
               only: /^.*/
-      # - push_image_pb:
-      #     filters:
-      #       tags:
-      #         only: /^.*/

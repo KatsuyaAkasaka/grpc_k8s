@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server-deployment
+spec:
+  replicas: 2
+  template:
+    spec:
+      containers:
+        - name: server
+          image: app-image:latest
+          imagePullPolicy: Never
