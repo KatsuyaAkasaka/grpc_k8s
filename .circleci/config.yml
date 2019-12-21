@@ -47,12 +47,6 @@ references:
       docker tag server asia.gcr.io/noticonn-test/k8s-grpc/server:${CIRCLE_SHA1}
       docker push asia.gcr.io/noticonn-test/k8s-grpc/server:${DOCKER_IMAGE_TAG}
       docker push asia.gcr.io/noticonn-test/k8s-grpc/server:${CIRCLE_CHA1}
-  apply_server: &apply_server
-    working_directory: ~/k8s_grpc/server
-    name: k8s releasse
-    command: |
-      ./k8s/overlays/production/build.sh "server:${CIRCLE_SHA1}"
-      kubectl apply -f ./k8s/manifest/prd-k8s.yaml
 
 jobs:
   push_image_client:
@@ -79,7 +73,6 @@ jobs:
       - run: *auth_gcloud
       - run: *build_server
       - run: *push_image_server
-      - run: *apply_server
 workflows:
   version: 2
   build_and_deploy:
