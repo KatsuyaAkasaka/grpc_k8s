@@ -46,7 +46,7 @@ references:
       docker tag server asia.gcr.io/noticonn-test/k8s-grpc/server:${DOCKER_IMAGE_TAG}
       docker tag server asia.gcr.io/noticonn-test/k8s-grpc/server:${CIRCLE_SHA1}
       docker push asia.gcr.io/noticonn-test/k8s-grpc/server:${DOCKER_IMAGE_TAG}
-      docker push asia.gcr.io/noticonn-test/k8s-grpc/server:${CIRCLE_CHA1}
+      docker push asia.gcr.io/noticonn-test/k8s-grpc/server:${CIRCLE_SHA1}
 
 jobs:
   push_image_client:
