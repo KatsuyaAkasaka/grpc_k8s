@@ -6,6 +6,7 @@ references:
       echo 'export GCP_PROJECT=${GCP_PROJECT}' >> $BASH_ENV
       echo 'export GO111MODUELE="on"' >> $BASH_ENV
       echo 'export IMAGE_NAME=${CIRCLE_BRANCH}' >> $BASH_ENV
+      echo 'export IMAGE_PATH="asia.gcr.io/noticonn-test/k8s-grpc"' >> $BASH_ENV
       if [ $CIRCLE_BRANCH == 'develop' ]; then
         echo 'export DOCKER_IMAGE_TAG=latest' >> $BASH_ENV
       else
@@ -35,29 +36,29 @@ references:
     working_directory: ~/k8s_grpc/client
     name: push_image
     command: |
-      docker tag client asia.gcr.io/noticonn-test/k8s-grpc/client:${DOCKER_IMAGE_TAG}
-      docker tag client asia.gcr.io/noticonn-test/k8s-grpc/client:${CIRCLE_SHA1}
-      docker push asia.gcr.io/noticonn-test/k8s-grpc/client:${DOCKER_IMAGE_TAG}
-      docker push asia.gcr.io/noticonn-test/k8s-grpc/client:${CIRCLE_SHA1}
+      docker tag client ${IMAGE_PATH}/client:${DOCKER_IMAGE_TAG}
+      docker tag client ${IMAGE_PATH}/client:${CIRCLE_SHA1}
+      docker push ${IMAGE_PATH}/client:${DOCKER_IMAGE_TAG}
+      docker push ${IMAGE_PATH}/client:${CIRCLE_SHA1}
   push_image_server: &push_image_server
     working_directory: ~/k8s_grpc/server
     name: push_image
     command: |
-      docker tag server asia.gcr.io/noticonn-test/k8s-grpc/server:${DOCKER_IMAGE_TAG}
-      docker tag server asia.gcr.io/noticonn-test/k8s-grpc/server:${CIRCLE_SHA1}
-      docker push asia.gcr.io/noticonn-test/k8s-grpc/server:${DOCKER_IMAGE_TAG}
-      docker push asia.gcr.io/noticonn-test/k8s-grpc/server:${CIRCLE_SHA1}
+      docker tag server ${IMAGE_PATH}/server:${DOCKER_IMAGE_TAG}
+      docker tag server ${IMAGE_PATH}/server:${CIRCLE_SHA1}
+      docker push ${IMAGE_PATH}/server:${DOCKER_IMAGE_TAG}
+      docker push ${IMAGE_PATH}/server:${CIRCLE_SHA1}
   deploy_server: &deploy_server
     working_directory: ~/k8s_grpc/server
     name: deploy server
     command: |
-      ./server/k8s/overlays/production/build.sh "server:${CIRCLE_SHA1}"
+      ./server/k8s/overlays/production/build.sh "${IMAGE_PATH}/server:${CIRCLE_SHA1}"
       kubectl apply -f ./k8s/manifest/prd-k8s.yaml
   deploy_client: &deploy_client
     working_directory: ~/k8s_grpc/client
     name: deploy client
     command: |
-      ./client/k8s/overlays/production/build.sh "client:${CIRCLE_SHA1}"
+      ./client/k8s/overlays/production/build.sh "${IMAGE_PATH}/client:${CIRCLE_SHA1}"
       kubectl apply -f ./k8s/manifest/prd-k8s.yaml
 
 jobs:
@@ -86,6 +87,12 @@ jobs:
       - run: *build_server
       - run: *push_image_server
       - run: *deploy_server
+  deploy:
+    working_directory: ~/k8s_grpc
+    steps:
+      - checkout
+      - run: *deploy
+
 workflows:
   version: 2
   build_and_deploy:

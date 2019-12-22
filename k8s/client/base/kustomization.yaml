@@ -1,0 +1,4 @@
+commonLabels:
+  app: grpc-k8s
+resources:
+  - client-deployment.yaml

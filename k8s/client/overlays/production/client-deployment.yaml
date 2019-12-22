@@ -1,0 +1,13 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grpc-k8s-client-deployment
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+        - name: grpc-k8s-client
+          image: client-deployment
+          ports:
+            - containerPort: 8080
