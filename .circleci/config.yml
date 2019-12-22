@@ -49,17 +49,17 @@ references:
       docker push ${IMAGE_PATH}/server:${DOCKER_IMAGE_TAG}
       docker push ${IMAGE_PATH}/server:${CIRCLE_SHA1}
   deploy_server: &deploy_server
-    working_directory: ~/k8s_grpc/server
+    working_directory: ~/k8s_grpc
     name: deploy server
     command: |
-      ./server/k8s/overlays/production/build.sh "${IMAGE_PATH}/server:${CIRCLE_SHA1}"
-      kubectl apply -f ./k8s/manifest/prd-k8s.yaml
+      ./k8s/server/overlays/production/build.sh "${IMAGE_PATH}/server:${CIRCLE_SHA1}"
+      kubectl apply -f ./k8s/manifest/server-deploy.yaml
   deploy_client: &deploy_client
-    working_directory: ~/k8s_grpc/client
+    working_directory: ~/k8s_grpc
     name: deploy client
     command: |
-      ./client/k8s/overlays/production/build.sh "${IMAGE_PATH}/client:${CIRCLE_SHA1}"
-      kubectl apply -f ./k8s/manifest/prd-k8s.yaml
+      ./k8s/client/overlays/production/build.sh "${IMAGE_PATH}/client:${CIRCLE_SHA1}"
+      kubectl apply -f ./k8s/manifest/client-deploy.yaml
 
 jobs:
   push_image_client:
@@ -74,6 +74,7 @@ jobs:
       - run: *auth_gcloud
       - run: *build_client
       - run: *push_image_client
+      - run: *deploy_client
   push_image_server:
     working_directory: ~/k8s_grpc
     docker:
@@ -87,11 +88,6 @@ jobs:
       - run: *build_server
       - run: *push_image_server
       - run: *deploy_server
-  deploy:
-    working_directory: ~/k8s_grpc
-    steps:
-      - checkout
-      - run: *deploy
 
 workflows:
   version: 2
