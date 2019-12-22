@@ -2,8 +2,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: grpc-k8s-server-deployment
+  labels:
+    app: k8s-server
 spec:
-  replicas: 3
+  replicas: 1
   template:
     spec:
       containers:

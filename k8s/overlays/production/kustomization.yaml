@@ -5,8 +5,12 @@ commonLabels:
 resources:
 - ../../base
 patchesStrategicMerge:
+- client-deployment.yaml
 - server-deployment.yaml
 images:
+- name: client-deployment
+  newName: asia.gcr.io/noticonn-test/k8s-grpc/client
+  newTag: master
 - name: server-deployment
   newName: asia.gcr.io/noticonn-test/k8s-grpc/server
   newTag: master
